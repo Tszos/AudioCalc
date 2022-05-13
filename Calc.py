@@ -1,6 +1,7 @@
 import os
 import math
 import re
+import fnmatch
 
 from datetime import date
 from openpyxl import load_workbook
@@ -16,10 +17,13 @@ date = today.strftime("%d.%m.%Y")
 rate = 2.47 / 60
 principals = ['WD', 'GH']
 
-principal = input('Podaj zleceniodawcę: (WD/GH)')
+# invoice template path
+invoice_path = "D:\\faktury\Formatka 2021.xlsx"
+
+
+principal = input('Podaj zleceniodawcę: (WD/GH)').upper()
 mp3_path = input('Podaj ścieżkę folderu z plikami')
 invoice_dir = input('Podaj ścieżkę w której zostanie zapisana faktura')
-invoice_patch = '/Users/tszos/Documents/Faktury/WD_2022.xlsx'
 invoice_number = input('podaj numer faktury')
 
 
@@ -38,15 +42,16 @@ def get_customer(princip=principal):
 # mp3 data
 def mp3_data(path=mp3_path):
     book = 0
-    book_name_raw = path.split('/')[-1]
+    book_name_raw = path.split('\\')[-1]
     book_name = " ".join(re.findall('[A-Z][^A-Z]*', book_name_raw))
     os.chdir(path)
     obj = os.scandir()
     for entry in obj:
-        if entry.is_dir() or entry.is_file():
-            audio = MP3(entry)
-            length = audio.info.length
-            book += length
+        if fnmatch.fnmatch(entry, '*mp3'):
+            if entry.is_dir() or entry.is_file():
+                audio = MP3(entry)
+                length = audio.info.length
+                book += length
     obj.close()
     return book, book_name
 
@@ -61,7 +66,7 @@ def calculate_earnings():
     return book_length * rate
 
 
-def post_to_invoice(customer=get_customer(), inv_patch=invoice_patch,
+def post_to_invoice(customer=get_customer(), inv_patch=invoice_path,
                     inv_number=invoice_number, name=f'{invoice_number.replace("/", "_")}.xlsx'):
     inv = load_workbook(inv_patch)
     invoice = inv.active
